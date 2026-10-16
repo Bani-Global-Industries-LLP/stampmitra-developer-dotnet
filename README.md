@@ -246,6 +246,8 @@ using var debugClient = new StampMitraClient(new StampMitraClientOptions { Debug
 ## Dependency injection
 
 ```csharp
+using StampMitra.Extensions.DependencyInjection;   // the extension method lives in this namespace
+
 services.AddStampMitra(o => o.ApiKey = configuration["StampMitra:ApiKey"]);
 ```
 

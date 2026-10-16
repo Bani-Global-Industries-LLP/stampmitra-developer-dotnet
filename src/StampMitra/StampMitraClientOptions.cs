@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,6 +26,7 @@ public sealed class StampMitraClientOptions
     /// The API key (<c>sk_test_...</c> or <c>sk_live_...</c>). Defaults to the <c>STAMPMITRA_API_KEY</c> environment
     /// variable. Server-side only: never ship <c>sk_</c> keys in apps or browsers.
     /// </summary>
+    [JsonIgnore]
     public string? ApiKey { get; set; }
 
     /// <summary>
@@ -44,9 +46,11 @@ public sealed class StampMitraClientOptions
     /// SDK. Configure it NOT to follow redirects, and give it an infinite <see cref="HttpClient.Timeout"/> (the SDK
     /// applies <see cref="Timeout"/> itself). When omitted the SDK creates one that never follows redirects.
     /// </summary>
+    [JsonIgnore]
     public HttpClient? HttpClient { get; set; }
 
     /// <summary>Headers sent with every request. <c>Authorization</c> and <c>x-api-key</c> are ignored.</summary>
+    [JsonIgnore]
     public IDictionary<string, string> DefaultHeaders { get; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Identifies your application in the <c>User-Agent</c> header.</summary>
@@ -56,6 +60,7 @@ public sealed class StampMitraClientOptions
     /// Debug logging sink, off by default. Receives one already-redacted line per request and response (credentials and
     /// identifiers are masked, names removed). Treat the output as sensitive anyway.
     /// </summary>
+    [JsonIgnore]
     public Action<string>? DebugLog { get; set; }
 
     /// <summary>Run the client-side validators before sending (default <see langword="true"/>).</summary>
@@ -65,6 +70,7 @@ public sealed class StampMitraClientOptions
     public bool AllowCustomKey { get; set; }
 
     /// <summary>Replaces the retry delay (for tests). Receives the computed delay.</summary>
+    [JsonIgnore]
     public Func<TimeSpan, CancellationToken, Task>? DelayAsync { get; set; }
 
     /// <summary>Never includes the API key.</summary>

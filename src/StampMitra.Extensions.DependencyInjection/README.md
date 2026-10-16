@@ -4,6 +4,10 @@
 [StampMitra .NET SDK](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet).
 
 ```csharp
+using StampMitra;
+using StampMitra.Extensions.DependencyInjection;
+using StampMitra.Models;
+
 builder.Services.AddStampMitra(o => o.ApiKey = builder.Configuration["StampMitra:ApiKey"]);
 
 // anywhere:

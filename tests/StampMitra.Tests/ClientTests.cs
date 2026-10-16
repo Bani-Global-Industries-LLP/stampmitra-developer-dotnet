@@ -101,6 +101,14 @@ public sealed class ClientTests
     }
 
     [Fact]
+    public void JsonSerializationOfOptionsNeverIncludesTheKey()
+    {
+        var options = new StampMitraClientOptions { ApiKey = Tc.Key };
+        options.DefaultHeaders["X-Custom"] = Tc.Key;
+        Assert.DoesNotContain("abcdefgh12345678", System.Text.Json.JsonSerializer.Serialize(options), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task SendsExpectedHeadersAndBodyAndReturnsTypedModel()
     {
         var (c, h, _) = Tc.Make(FakeHandler.Json(201, PanOk, ("x-request-id", "req_abc")));
