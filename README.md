@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/actions/workflows/ci.yml/badge.svg)](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/v/StampMitra)](https://www.nuget.org/packages/StampMitra)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/LICENSE)
 
 > The NuGet badge shows a version only once the package is published.
 
@@ -220,7 +220,7 @@ bool authentic = WebhookSignature.Verify(rawBody, timestamp, signature, secret, 
 300 s (configurable) from now are rejected, an empty secret is rejected, and failures raise `SignatureVerificationException`
 (`Code` is `SIGNATURE_MISMATCH`, `INVALID_TIMESTAMP`, `TIMESTAMP_OUTSIDE_TOLERANCE`, `INVALID_PAYLOAD`, `MISSING_HEADERS` or `MISSING_SECRET`).
 `ConstructEventFromHeaders` reads the three headers through a lookup. Deliveries are retried by the platform, so de-duplicate on `EventId`.
-A complete ASP.NET Core receiver lives in [`examples/WebhookReceiver`](examples/WebhookReceiver/Program.cs).
+A complete ASP.NET Core receiver lives in [`examples/WebhookReceiver`](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/examples/WebhookReceiver/Program.cs).
 
 ## Validation
 
@@ -285,7 +285,7 @@ Growth and Scale are also available yearly (₹9,990 and ₹49,990, two months f
 - The API key and webhook secret never appear in `ToString()` output, exception messages, stack traces or debug logs (covered by tests).
 - Path ids are validated and percent-encoded (empty values, `.`, `..` and slashes are rejected locally); header values are checked for CR/LF.
 - Always verify webhook signatures on the raw body and keep the default 300 s tolerance.
-- Report vulnerabilities as described in [SECURITY.md](SECURITY.md), not in public issues.
+- Report vulnerabilities as described in [SECURITY.md](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/SECURITY.md), not in public issues.
 
 ## Supported versions
 
@@ -296,12 +296,12 @@ Growth and Scale are also available yearly (₹9,990 and ₹49,990, two months f
 | Core dependencies | none (BCL only) |
 | `StampMitra.Extensions.DependencyInjection` | `Microsoft.Extensions.Http` 8.x |
 
-Only the latest minor release receives fixes while the SDK is pre-1.0. See [CHANGELOG.md](CHANGELOG.md).
+Only the latest minor release receives fixes while the SDK is pre-1.0. See [CHANGELOG.md](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/CHANGELOG.md).
 
 ## Examples
 
-[`examples/ConsoleApp`](examples/ConsoleApp/Program.cs) (verify a PAN, create an order, read its status, page through logs) and
-[`examples/WebhookReceiver`](examples/WebhookReceiver/Program.cs) (ASP.NET Core minimal API). Both are compiled by `dotnet build` and CI.
+[`examples/ConsoleApp`](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/examples/ConsoleApp/Program.cs) (verify a PAN, create an order, read its status, page through logs) and
+[`examples/WebhookReceiver`](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/examples/WebhookReceiver/Program.cs) (ASP.NET Core minimal API). Both are compiled by `dotnet build` and CI.
 Point them at a mock server with `STAMPMITRA_BASE_URL=http://127.0.0.1:4010`.
 
 ## Development
@@ -314,7 +314,7 @@ dotnet list package --vulnerable --include-transitive
 ```
 
 `spec/openapi.json` is a snapshot of the public spec; the coverage test fails if any `METHOD + path` in it has no SDK method.
-The conformance suite starts the spec repo's mock server (see [CONTRIBUTING.md](CONTRIBUTING.md)). See also
-[RELEASING.md](RELEASING.md) and [SECURITY.md](SECURITY.md).
+The conformance suite starts the spec repo's mock server (see [CONTRIBUTING.md](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/CONTRIBUTING.md)). See also
+[RELEASING.md](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/RELEASING.md) and [SECURITY.md](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/SECURITY.md).
 
-Licensed under the [MIT License](LICENSE). Copyright Bani Global Industries LLP (StampMitra).
+Licensed under the [MIT License](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/LICENSE). Copyright Bani Global Industries LLP (StampMitra).
