@@ -20,7 +20,7 @@ jobs:
         with:
           repository: Bani-Global-Industries-LLP/stampmitra-developer-openapi
           path: .openapi
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             6.0.x
@@ -75,7 +75,7 @@ jobs:
       id-token: write # OIDC token for NuGet trusted publishing; no long-lived API key is stored
       contents: read
     steps:
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
       - uses: actions/download-artifact@v4
