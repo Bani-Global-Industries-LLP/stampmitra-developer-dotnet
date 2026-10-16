@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- net6.0 is out of support but is still a target of this package (see README "Supported versions"). -->
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <Authors>StampMitra / Bani Global Industries LLP</Authors>
+    <Company>Bani Global Industries LLP</Company>
+    <Copyright>Copyright (c) Bani Global Industries LLP (StampMitra)</Copyright>
+  </PropertyGroup>
+</Project>

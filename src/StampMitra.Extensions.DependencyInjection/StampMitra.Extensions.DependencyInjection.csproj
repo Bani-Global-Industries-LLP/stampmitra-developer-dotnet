@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <RootNamespace>StampMitra.Extensions.DependencyInjection</RootNamespace>
+    <AssemblyName>StampMitra.Extensions.DependencyInjection</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <PackageId>StampMitra.Extensions.DependencyInjection</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Microsoft.Extensions.DependencyInjection / IHttpClientFactory integration for the StampMitra .NET SDK: services.AddStampMitra(...).</Description>
+    <PackageTags>stampmitra;dependency-injection;httpclientfactory;kyc;estamp;india</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://developer.stampmitra.in/sdks/dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" PrivateAssets="All" />
+    <ProjectReference Include="..\StampMitra\StampMitra.csproj" />
+  </ItemGroup>
+
+</Project>

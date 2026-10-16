@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: Bani-Global-Industries-LLP/stampmitra-developer-openapi
+          path: .openapi
+      - uses: actions/setup-dotnet@v4
+        with:
+          # 8.0 builds and runs the net8.0 tests; 6.0 supplies the runtime for the net6.0 test run.
+          dotnet-version: |
+            6.0.x
+            8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build (warnings are errors; includes the examples)
+        run: dotnet build StampMitra.sln --configuration Release
+      - name: Unit and conformance tests on net6.0 and net8.0, with coverage
+        run: dotnet test StampMitra.sln --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults
+        env:
+          STAMPMITRA_SPEC_DIR: ${{ github.workspace }}/.openapi
+          CONFORMANCE_REQUIRED: '1'
+      - name: Spec coverage (every operation has an SDK method)
+        run: scripts/check-spec-coverage.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet format StampMitra.sln --verify-no-changes
+      - name: Pack (validates package metadata, SourceLink and symbols)
+        run: |
+          dotnet pack src/StampMitra --configuration Release --output ./artifacts
+          dotnet pack src/StampMitra.Extensions.DependencyInjection --configuration Release --output ./artifacts
+      - name: Package contents
+        run: |
+          for f in artifacts/*.nupkg; do unzip -l "$f"; done
+          test -f artifacts/StampMitra.0.1.0.snupkg
+          test -f artifacts/StampMitra.Extensions.DependencyInjection.0.1.0.snupkg
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Vulnerable and deprecated packages
+        run: |
+          dotnet restore StampMitra.sln
+          dotnet list StampMitra.sln package --vulnerable --include-transitive 2>&1 | tee vulnerable.txt
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then echo "::error::vulnerable packages found"; exit 1; fi

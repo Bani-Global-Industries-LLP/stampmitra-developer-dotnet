@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{68483C4E-1C1E-42FD-B81D-9744E510E5FE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StampMitra", "src\StampMitra\StampMitra.csproj", "{2F80E72D-A4BB-4E19-AC6B-6254A8B23007}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StampMitra.Extensions.DependencyInjection", "src\StampMitra.Extensions.DependencyInjection\StampMitra.Extensions.DependencyInjection.csproj", "{F9FCFBD4-1F0A-4C86-A30E-879F2D982FBD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3DAC4C9C-F6EF-48F3-B8A6-6099CCA70CAE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StampMitra.Tests", "tests\StampMitra.Tests\StampMitra.Tests.csproj", "{4FFAE001-15C0-4377-B855-FD3010A61279}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{C7222E65-B29B-4E78-AB4A-1B67CB017C1F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp", "examples\ConsoleApp\ConsoleApp.csproj", "{675E93F2-AB00-4539-BCEA-BA2858EC3939}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebhookReceiver", "examples\WebhookReceiver\WebhookReceiver.csproj", "{D9256A73-85BA-4954-9669-F5EE68DB27D7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2F80E72D-A4BB-4E19-AC6B-6254A8B23007}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2F80E72D-A4BB-4E19-AC6B-6254A8B23007}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2F80E72D-A4BB-4E19-AC6B-6254A8B23007}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2F80E72D-A4BB-4E19-AC6B-6254A8B23007}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9FCFBD4-1F0A-4C86-A30E-879F2D982FBD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9FCFBD4-1F0A-4C86-A30E-879F2D982FBD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9FCFBD4-1F0A-4C86-A30E-879F2D982FBD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9FCFBD4-1F0A-4C86-A30E-879F2D982FBD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FFAE001-15C0-4377-B855-FD3010A61279}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FFAE001-15C0-4377-B855-FD3010A61279}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FFAE001-15C0-4377-B855-FD3010A61279}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FFAE001-15C0-4377-B855-FD3010A61279}.Release|Any CPU.Build.0 = Release|Any CPU
+		{675E93F2-AB00-4539-BCEA-BA2858EC3939}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{675E93F2-AB00-4539-BCEA-BA2858EC3939}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{675E93F2-AB00-4539-BCEA-BA2858EC3939}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{675E93F2-AB00-4539-BCEA-BA2858EC3939}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9256A73-85BA-4954-9669-F5EE68DB27D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9256A73-85BA-4954-9669-F5EE68DB27D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9256A73-85BA-4954-9669-F5EE68DB27D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9256A73-85BA-4954-9669-F5EE68DB27D7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{2F80E72D-A4BB-4E19-AC6B-6254A8B23007} = {68483C4E-1C1E-42FD-B81D-9744E510E5FE}
+		{F9FCFBD4-1F0A-4C86-A30E-879F2D982FBD} = {68483C4E-1C1E-42FD-B81D-9744E510E5FE}
+		{4FFAE001-15C0-4377-B855-FD3010A61279} = {3DAC4C9C-F6EF-48F3-B8A6-6099CCA70CAE}
+		{675E93F2-AB00-4539-BCEA-BA2858EC3939} = {C7222E65-B29B-4E78-AB4A-1B67CB017C1F}
+		{D9256A73-85BA-4954-9669-F5EE68DB27D7} = {C7222E65-B29B-4E78-AB4A-1B67CB017C1F}
+	EndGlobalSection
+EndGlobal

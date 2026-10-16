@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <RootNamespace>StampMitra</RootNamespace>
+    <AssemblyName>StampMitra</AssemblyName>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <PackageId>StampMitra</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Official .NET client for the StampMitra Developer API: Indian identity verification (PAN, GSTIN, vehicle RC, Voter ID, driving licence, passport, CIN, Udyam, bank account) and e-Stamp Paper. Async-first, dependency-free (HttpClient and System.Text.Json only).</Description>
+    <PackageTags>stampmitra;kyc;pan;gstin;verification;estamp;india;api-client</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://developer.stampmitra.in/sdks/dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/CHANGELOG.md</PackageReleaseNotes>
+
+    <!-- SourceLink, symbols, reproducible builds -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0" PrivateAssets="All" />
+    <InternalsVisibleTo Include="StampMitra.Tests" />
+  </ItemGroup>
+
+</Project>
