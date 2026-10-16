@@ -15,8 +15,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           repository: Bani-Global-Industries-LLP/stampmitra-developer-openapi
           path: .openapi
@@ -56,7 +56,7 @@ jobs:
     permissions:
       contents: write # create the GitHub release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
           name: packages
