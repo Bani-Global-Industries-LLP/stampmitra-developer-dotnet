@@ -254,6 +254,20 @@ services.AddStampMitra(o => o.ApiKey = configuration["StampMitra:ApiKey"]);
 `AddStampMitra` lives in the `StampMitra.Extensions.DependencyInjection` namespace. It registers a singleton `StampMitraClient` on a named `IHttpClientFactory` client that does not follow redirects, and bridges the debug
 lines to `ILogger` (category `StampMitra`, Debug level). The core package has no dependency on `Microsoft.Extensions.*`.
 
+## Pricing
+
+The SDK is free and MIT-licensed. You pay only for API calls, and only for successful production calls; Sandbox is free.
+
+| Plan | Rate |
+|---|---|
+| **Sandbox** (test keys, `sk_test_...`) | Free. Calls run against sandbox data and never debit your wallet. |
+| **Developer Suite** (live keys, `sk_live_...`) | ₹2 per call: PAN, GSTIN, vehicle RC, Voter ID, Driving Licence, Passport, CIN, Udyam, PAN to GSTIN, PAN to Udyam |
+| | ₹4 per call: bank account (penny-drop) |
+| | ₹5 per call: each e-Stamp call |
+| **White-label / CA fulfilment** | Custom, with volume pricing and SLAs. [Contact us](https://developer.stampmitra.in/contact). |
+
+Production calls are deducted from your API credit wallet (top up under Dashboard, Billing). Rates are shown for convenience and may change; the [pricing page](https://developer.stampmitra.in/pricing) is the source of truth.
+
 ## Security
 
 - Use keys server-side only; load them from the environment or a secret manager and never commit them.
