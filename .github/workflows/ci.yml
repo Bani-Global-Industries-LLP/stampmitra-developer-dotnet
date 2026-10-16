@@ -22,7 +22,7 @@ jobs:
         with:
           repository: Bani-Global-Industries-LLP/stampmitra-developer-openapi
           path: .openapi
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           # 8.0 builds and runs the net8.0 tests; 6.0 supplies the runtime for the net6.0 test run.
           dotnet-version: |
@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
       - run: dotnet format StampMitra.sln --verify-no-changes
@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 8.0.x
       - name: Vulnerable and deprecated packages
