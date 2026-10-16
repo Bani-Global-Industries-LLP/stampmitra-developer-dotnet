@@ -44,7 +44,7 @@ jobs:
       - run: dotnet format StampMitra.sln --verify-no-changes
       - run: dotnet pack src/StampMitra --configuration Release --no-build --output ./artifacts
       - run: dotnet pack src/StampMitra.Extensions.DependencyInjection --configuration Release --no-build --output ./artifacts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages
           path: artifacts/*
