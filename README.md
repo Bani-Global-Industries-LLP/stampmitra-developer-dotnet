@@ -246,12 +246,12 @@ using var debugClient = new StampMitraClient(new StampMitraClientOptions { Debug
 ## Dependency injection
 
 ```csharp
-using StampMitra.Extensions.DependencyInjection;   // the extension method lives in this namespace
+using StampMitra.Extensions.DependencyInjection;
 
 services.AddStampMitra(o => o.ApiKey = configuration["StampMitra:ApiKey"]);
 ```
 
-Registers a singleton `StampMitraClient` on a named `IHttpClientFactory` client that does not follow redirects, and bridges the debug
+`AddStampMitra` lives in the `StampMitra.Extensions.DependencyInjection` namespace. It registers a singleton `StampMitraClient` on a named `IHttpClientFactory` client that does not follow redirects, and bridges the debug
 lines to `ILogger` (category `StampMitra`, Debug level). The core package has no dependency on `Microsoft.Extensions.*`.
 
 ## Security

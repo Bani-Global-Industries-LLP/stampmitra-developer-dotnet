@@ -90,7 +90,10 @@ public sealed class ReadmeSnippetsTests
         foreach (Match m in blocks)
         {
             var code = string.Join("\n", m.Groups[1].Value.Split('\n').Where(l => !Regex.IsMatch(l, @"^using StampMitra[\w.]*;\s*$")));
-            Assert.True(snippets.Contains(Norm(code), StringComparison.Ordinal), "README block is not in ReadmeSnippets.cs:\n" + code);
+            Assert.True(snippets.Contains(Norm(code), StringComparison.Ordinal), "README block is not in ReadmeSnippets.cs:\n" + code +
+                "\n\nFix: copy the block verbatim into a new/updated SnippetN method in tests/StampMitra.Tests/ReadmeSnippets.cs " +
+                "(whitespace is ignored; only whole-line `using StampMitra...;` directives are skipped, so a trailing comment on a using line must go). " +
+                "Check before committing: scripts/check-readme-snippets.sh");
         }
     }
 }

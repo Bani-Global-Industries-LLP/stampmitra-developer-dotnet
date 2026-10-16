@@ -9,6 +9,7 @@ You need the .NET 8 SDK (`global.json` pins the feature band) and, to run the te
 ```bash
 dotnet build                                        # warnings are errors
 dotnet test                                         # unit + conformance suites on net6.0 and net8.0
+scripts/check-readme-snippets.sh                    # every README ```csharp block must be mirrored in tests/StampMitra.Tests/ReadmeSnippets.cs
 scripts/check-spec-coverage.sh                      # every operation in spec/openapi.json must have an SDK method
 dotnet format StampMitra.sln --verify-no-changes    # formatting and analyzers (run `dotnet format StampMitra.sln` to fix)
 dotnet list package --vulnerable --include-transitive
