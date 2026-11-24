@@ -33,7 +33,7 @@ public enum StampMitraEnvironment
 public sealed class StampMitraClient : IDisposable
 {
     /// <summary>The SDK version.</summary>
-    public const string Version = "0.1.0";
+    public const string Version = "0.2.0";
 
     private static readonly Regex KeyRx = new(@"^sk_(test|live)_[A-Za-z0-9_-]{8,}\z", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
@@ -124,6 +124,8 @@ public sealed class StampMitraClient : IDisposable
         Usage = new UsageResource(transport);
         Logs = new LogsResource(transport, options.ValidateInput);
         Webhooks = new WebhooksResource(transport);
+        Wallets = new WalletsResource(transport, options.ValidateInput);
+        Account = new AccountResource(transport);
     }
 
     internal Transport Transport { get; }
@@ -157,6 +159,12 @@ public sealed class StampMitraClient : IDisposable
 
     /// <summary>Webhook event history and replay.</summary>
     public WebhooksResource Webhooks { get; }
+
+    /// <summary>The Stamp Duty and Service Fee wallets.</summary>
+    public WalletsResource Wallets { get; }
+
+    /// <summary>Wallet balance and usage of your organization.</summary>
+    public AccountResource Account { get; }
 
     /// <summary>Releases the connection pool the SDK created. A <see cref="HttpClient"/> you supplied is left alone.</summary>
     public void Dispose() => _ownedHttp?.Dispose();

@@ -61,7 +61,7 @@ public sealed class SpecCoverageTests
     public void EverySpecOperationHasAnSdkMethod()
     {
         var spec = SpecOperations();
-        Assert.Equal(31, spec.Count);
+        Assert.Equal(62, spec.Count);
         var missing = spec.Except(SdkOperations()).ToList();
         Assert.True(missing.Count == 0, "Spec operations without an SDK method:\n  " + string.Join("\n  ", missing));
     }

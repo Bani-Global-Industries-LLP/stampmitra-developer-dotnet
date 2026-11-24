@@ -44,14 +44,14 @@ public sealed class WebhookEventsResource
     /// <returns>The first page.</returns>
     public Task<GenericResponse> ListAsync(CancellationToken cancellationToken) => ListAsync(null, null, null, cancellationToken);
 
-    /// <summary>Replays a delivered event to your endpoint (POST /v1/webhooks/events/{id}/replay). Not retried automatically unless you pass <see cref="RequestOptions.IdempotencyKey"/>.</summary>
+    /// <summary>Replays a delivered event to your endpoint (POST /v1/webhooks/events/{id}/replay). Never retried automatically and sent without an Idempotency-Key.</summary>
     /// <param name="id">The event id.</param>
     /// <param name="options">Per-call overrides (timeout, retries, idempotency key, headers).</param>
     /// <param name="cancellationToken">Cancels the call, including any pending retry delay.</param>
     /// <returns>The response; HTTP metadata is on <see cref="ApiModel.Response"/>.</returns>
     public async Task<GenericResponse> ReplayAsync(string id, RequestOptions? options = null, CancellationToken cancellationToken = default)
     {
-        return await _transport.RequestAsync<GenericResponse>(HttpMethod.Post, "/v1/webhooks/events/{id}/replay", new string?[] { id }, null, null, options, false, r => new GenericResponse(r.Body), cancellationToken).ConfigureAwait(false);
+        return await _transport.RequestAsync<GenericResponse>(HttpMethod.Post, "/v1/webhooks/events/{id}/replay", new string?[] { id }, null, null, options, false, r => new GenericResponse(r.Body), cancellationToken, RetryMode.Never).ConfigureAwait(false);
     }
 
     /// <inheritdoc cref="ReplayAsync(string, RequestOptions, CancellationToken)"/>

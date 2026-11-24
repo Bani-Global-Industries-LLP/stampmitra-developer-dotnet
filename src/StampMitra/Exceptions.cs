@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace StampMitra;
 
@@ -54,9 +55,37 @@ public class StampMitraException : Exception
 
     /// <summary>The raw response body (truncated to 8 KiB), when one was received.</summary>
     public string? Body { get; }
+
+    /// <summary>
+    /// Per-field findings of a rejected e-Stamp order body (<c>error.details.errors[]</c>); empty when the response carried none.
+    /// </summary>
+    public IReadOnlyList<ErrorDetail> Errors { get; internal set; } = Array.Empty<ErrorDetail>();
+
+    /// <summary>
+    /// The wallet that is short on a 402 (<c>error.details.wallet</c>): <see cref="WalletNames.StampDuty"/> or
+    /// <see cref="WalletNames.ServiceFee"/>; <see langword="null"/> when not reported.
+    /// </summary>
+    public string? Wallet { get; internal set; }
 }
 
-/// <summary>HTTP 400, or input rejected locally by the client-side validators (no network call, nothing billed).</summary>
+/// <summary>One finding of a rejected request body: <c>{ field, code, message, index }</c>.</summary>
+/// <param name="Field">Path of the offending input, for example <c>stamps[0].firstParty.name</c>.</param>
+/// <param name="Code">Stable machine code, for example <c>REQUIRED</c>.</param>
+/// <param name="Message">Human-readable text.</param>
+/// <param name="Index">Zero-based index of the stamp line, when the finding is inside <c>stamps[i]</c>.</param>
+public sealed record ErrorDetail(string? Field, string? Code, string? Message, int? Index);
+
+/// <summary>Values of <see cref="StampMitraException.Wallet"/>.</summary>
+public static class WalletNames
+{
+    /// <summary>The Stamp Duty Wallet.</summary>
+    public const string StampDuty = "STAMP_DUTY";
+
+    /// <summary>The Service Fee Wallet.</summary>
+    public const string ServiceFee = "SERVICE_FEE";
+}
+
+/// <summary>HTTP 400 or 422, or input rejected locally by the client-side validators (no network call, nothing billed).</summary>
 public class ValidationException : StampMitraException
 {
     /// <summary>Creates a validation exception.</summary>
@@ -113,10 +142,14 @@ public class NotFoundException : StampMitraException
 public class ConflictException : StampMitraException
 {
     /// <summary>Creates a conflict exception.</summary>
-    public ConflictException(string message, int? status = null, string? code = null, string? requestId = null, string? body = null, string? field = null)
+    public ConflictException(string message, int? status = null, string? code = null, string? requestId = null, string? body = null, string? field = null, TimeSpan? retryAfter = null)
         : base(message, status, code, requestId, field, body)
     {
+        RetryAfter = retryAfter;
     }
+
+    /// <summary>The <c>Retry-After</c> value when the server sent one.</summary>
+    public TimeSpan? RetryAfter { get; }
 }
 
 /// <summary>HTTP 429.</summary>
@@ -129,7 +162,7 @@ public class RateLimitException : StampMitraException
         RetryAfter = retryAfter;
     }
 
-    /// <summary>The <c>Retry-After</c> value when the server sent one (the API itself currently does not).</summary>
+    /// <summary>The <c>Retry-After</c> value when the server sent one.</summary>
     public TimeSpan? RetryAfter { get; }
 }
 
@@ -137,10 +170,14 @@ public class RateLimitException : StampMitraException
 public class UpstreamException : StampMitraException
 {
     /// <summary>Creates an upstream exception.</summary>
-    public UpstreamException(string message, int? status = null, string? code = null, string? requestId = null, string? body = null, string? field = null)
+    public UpstreamException(string message, int? status = null, string? code = null, string? requestId = null, string? body = null, string? field = null, TimeSpan? retryAfter = null)
         : base(message, status, code, requestId, field, body)
     {
+        RetryAfter = retryAfter;
     }
+
+    /// <summary>The <c>Retry-After</c> value when the server sent one.</summary>
+    public TimeSpan? RetryAfter { get; }
 }
 
 /// <summary>The request never produced a response (DNS failure, connection refused or dropped, TLS failure).</summary>

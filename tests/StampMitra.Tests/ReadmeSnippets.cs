@@ -135,4 +135,83 @@ internal static class ReadmeSnippets
         await Task.CompletedTask;
     }
 
+    internal static async Task Snippet11(StampMitraClient client, CancellationToken ct)
+    {
+        var body = new EstampOrderRequest
+        {
+            Reference = "order-2026-0917",
+            Stamps = new[]
+            {
+                new EstampStampLine
+                {
+                    ClientReference = "line-001",
+                    State = "MH",
+                    Category = EstampCategory.EStamp,
+                    ArticleCode = "ART1",
+                    Denomination = 500,
+                    FirstParty = new EstampParty { Name = "Jane Doe", Address = "12 MG Road, Pune" },
+                    SecondParty = "John Smith",
+                    Purpose = "Rental Agreement",
+                },
+            },
+        };
+
+        // 1. Dry run: nothing is saved or charged.
+        EstampValidateResult check = await client.Estamp.Orders.ValidateAsync(body, ct);
+        if (check.Valid != true)
+        {
+            foreach (var issue in check.Errors ?? new List<EstampValidationIssue>())
+            {
+                Console.WriteLine($"stamps[{issue.Index}] {issue.Field}: {issue.Message}");
+            }
+
+            return;
+        }
+
+        // 2. Create. The Idempotency-Key is required by the API: the SDK generates one when you omit it and reuses it on retries.
+        EstampOrder order = await client.Estamp.Orders.CreateAsync(body, new RequestOptions { IdempotencyKey = "order-2026-0917" }, ct);
+
+        // 3. Upload the payer's PAN card (PDF, JPEG or PNG, at most 10 MB). Optional.
+        await client.Estamp.Orders.UploadDocumentAsync(order.Id!, await EstampDocumentFile.FromPathAsync("pan.pdf", null, ct), ct);
+
+        // 4. List the stamps and 5. fetch the certificate of each one once it has been delivered.
+        EstampStampList stamps = await client.Estamp.Orders.ListStampsAsync(order.Id!, ct);
+        foreach (var stamp in stamps.Items ?? new List<EstampStamp>())
+        {
+            EstampCertificate cert = await client.Estamp.Stamps.GetCertificateAsync(stamp.Id!, ct);
+            Console.WriteLine(cert.Available == true ? cert.DownloadUrl : $"{stamp.Id}: {cert.Status}");
+        }
+        await Task.CompletedTask;
+    }
+
+    internal static async Task Snippet12(StampMitraClient client, CancellationToken ct, EstampOrderRequest body)
+    {
+        try
+        {
+            await client.Estamp.Orders.CreateAsync(body, ct);
+        }
+        catch (ValidationException ex) when (ex.Errors.Count > 0)
+        {
+            foreach (var e in ex.Errors)
+            {
+                Console.Error.WriteLine($"stamps[{e.Index}] {e.Field} {e.Code}: {e.Message}");
+            }
+        }
+        catch (PaymentRequiredException ex)
+        {
+            Console.Error.WriteLine($"top up the {ex.Wallet} wallet first");
+        }
+        await Task.CompletedTask;
+    }
+
+    internal static async Task Snippet13(StampMitraClient client, CancellationToken ct)
+    {
+        StampDutyWalletTopup topup = await client.Wallets.StampDuty.TopUpAsync(new WalletTopupRequest { BaseAmount = 1000 }, ct);
+        Console.WriteLine($"pay {topup.TotalCharged} (fee {topup.ProcessingFeeAmount} + GST {topup.GstAmount}); wallet credited {topup.CreditAmount}");
+
+        WalletBalance balance = await client.Wallets.ServiceFee.GetBalanceAsync(ct);
+        StampDutyWalletInvoicesPage invoices = await client.Wallets.StampDuty.ListInvoicesAsync(null, ct);
+        await Task.CompletedTask;
+    }
+
 }

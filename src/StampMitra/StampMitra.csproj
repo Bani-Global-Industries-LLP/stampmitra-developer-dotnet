@@ -7,7 +7,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <PackageId>StampMitra</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Description>Official .NET client for the StampMitra Developer API: Indian identity verification (PAN, GSTIN, vehicle RC, Voter ID, driving licence, passport, CIN, Udyam, bank account) and e-Stamp Paper. Async-first, dependency-free (HttpClient and System.Text.Json only).</Description>
     <PackageTags>stampmitra;kyc;pan;gstin;verification;estamp;india;api-client</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
