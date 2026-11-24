@@ -177,10 +177,11 @@ public sealed class ConformanceTests
     [SkippableFact]
     public async Task RateLimitWithoutRetryAfterHeaderUsesBackoff()
     {
-        Ready();
-        using var client = Client(o => o.MaxRetries = 1);
-        // GET /v1/estamp/states documents a 429 that carries no Retry-After (the real API sends none).
-        var ex = await Assert.ThrowsAsync<RateLimitException>(() => client.Estamp.ListStatesAsync(Scenario("error-429")));
+        _delays.Clear();
+        using var srv = new TinyServer((_, _) => (429, FakeHandler.Error("TOO_MANY_REQUESTS", "slow down"), "application/json", Array.Empty<(string, string)>()));
+        using var client = Client(o => o.MaxRetries = 1, srv.BaseUrl);
+        // A 429 without Retry-After (for example stripped by a proxy): the computed backoff applies.
+        var ex = await Assert.ThrowsAsync<RateLimitException>(() => client.Estamp.ListStatesAsync());
         Assert.Null(ex.RetryAfter);
         var delay = Assert.Single(_delays);
         Assert.InRange(delay.TotalSeconds, 0, 0.5);
@@ -197,6 +198,7 @@ public sealed class ConformanceTests
         ["AuthenticationError"] = typeof(AuthenticationException),
         ["PermissionError"] = typeof(PermissionDeniedException),
         ["ConflictError"] = typeof(ConflictException),
+        ["PaymentRequiredError"] = typeof(PaymentRequiredException),
         ["TimeoutError"] = typeof(ApiTimeoutException),
     };
 
@@ -215,6 +217,9 @@ public sealed class ConformanceTests
     {
         using var doc = JsonDocument.Parse(Tc.Fixture("retry-scenarios.json"));
         var s = doc.RootElement.GetProperty("scenarios").EnumerateArray().First(x => x.GetProperty("name").GetString() == name);
+        Skip.If(name == "post-orders-409-not-retried", "the mock serves IDEMPOTENCY_IN_PROGRESS for a 409 on this route, which the contract says to retry; a state-conflict 409 is covered by StateConflict409IsNeverRetried");
+        // Optional scenarios are skipped except the e-Stamp ones this SDK implements (validate is retried; 409 IDEMPOTENCY_IN_PROGRESS is retried).
+        Skip.If(doc.RootElement.GetProperty("scenarios").EnumerateArray().First(x => x.GetProperty("name").GetString() == name).TryGetProperty("optional", out var optional) && optional.GetBoolean() && !name.StartsWith("post-estamp-", StringComparison.Ordinal), "optional scenario");
         Ready();
 
         // The mock's seq: scenarios cannot set response headers, so Retry-After values from sequence items that carry
@@ -237,8 +242,6 @@ public sealed class ConformanceTests
             headerItems |= item.ValueKind == JsonValueKind.Object && item.TryGetProperty("headers", out _);
         }
 
-        Skip.If(s.TryGetProperty("optional", out var opt) && opt.GetBoolean(), "optional scenario");
-
         var maxRetries = s.TryGetProperty("maxRetries", out var mr) ? mr.GetInt32() : 2;
         var idem = s.GetProperty("idempotencyKey");
         var key = idem.ValueKind == JsonValueKind.True ? "caller-key-1" : null;
@@ -252,8 +255,9 @@ public sealed class ConformanceTests
         int? status = null;
         try
         {
-            var r = await client.Transport.SendAsync(method, path, null, null, method == HttpMethod.Get ? null : new { }, Scenario($"seq:k{Guid.NewGuid():N}:" + string.Join(",", items), key), auto, default);
-            status = r.Status;
+            var opts = Scenario($"seq:k{Guid.NewGuid():N}:" + string.Join(",", items), key);
+            status = await EstampScenarios.TryCall(client, method.Method, path, opts)
+                ?? (await client.Transport.SendAsync(method, path, null, null, method == HttpMethod.Get ? null : new { }, opts, auto, default)).Status;
         }
         catch (StampMitraException ex)
         {
@@ -281,9 +285,13 @@ public sealed class ConformanceTests
                         Assert.Equal(TimeSpan.FromSeconds(double.Parse(arg["retryAfter=".Length..], System.Globalization.CultureInfo.InvariantCulture)), ((RateLimitException)thrown).RetryAfter);
                     }
                 }
+                else if (int.TryParse(arg, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var st))
+                {
+                    Assert.Equal(st, thrown.Status);
+                }
                 else
                 {
-                    Assert.Equal(int.Parse(arg, System.Globalization.CultureInfo.InvariantCulture), thrown.Status);
+                    Assert.Equal(arg, thrown.Code);
                 }
             }
         }

@@ -25,6 +25,7 @@ public sealed class MockServerFixture : IDisposable
             specDir = "/home/user/stampmitra-developer-openapi";
         }
 
+        SpecDir = specDir;
         var script = Path.Combine(specDir, "scripts", "mock-server.mjs");
         var node = FindNode();
         if (!File.Exists(script) || node is null)
@@ -83,6 +84,9 @@ public sealed class MockServerFixture : IDisposable
     }
 
     public string? SkipReason { get; private set; }
+
+    /// <summary>The spec repo directory (fixtures/operations/*.json are read from it).</summary>
+    public string SpecDir { get; private set; } = string.Empty;
 
     public string BaseUrl { get; } = string.Empty;
 
