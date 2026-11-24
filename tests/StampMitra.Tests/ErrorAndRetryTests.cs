@@ -228,13 +228,14 @@ public sealed class RetryTests
     }
 
     [Fact]
-    public async Task ReplayWithoutKeyIsNeverRetriedButWithKeyIs()
+    public async Task ReplayIsNeverRetriedAndNeverSendsAKey()
     {
         var (c, h, _) = Tc.Make((_, n) => Task.FromResult(n <= 2 ? Err(503) : FakeHandler.Json(200, "{}")));
         await Assert.ThrowsAsync<UpstreamException>(() => c.Webhooks.Events.ReplayAsync("evt_1"));
         Assert.Single(h.Requests);
-        await c.Webhooks.Events.ReplayAsync("evt_1", new RequestOptions { IdempotencyKey = "k1" });
-        Assert.Equal(3, h.Requests.Count);
+        await Assert.ThrowsAsync<UpstreamException>(() => c.Webhooks.Events.ReplayAsync("evt_1", new RequestOptions { IdempotencyKey = "k1" }));
+        Assert.Equal(2, h.Requests.Count);
+        Assert.All(h.Requests, r => Assert.False(r.Headers.ContainsKey("Idempotency-Key")));
     }
 
     [Fact]

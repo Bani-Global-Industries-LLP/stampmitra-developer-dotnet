@@ -14,6 +14,19 @@ using StampMitra.Models;
 
 namespace StampMitra;
 
+/// <summary>How a call may be retried.</summary>
+internal enum RetryMode
+{
+    /// <summary>GET is retry-safe; a POST is retried only when it carries an Idempotency-Key.</summary>
+    Auto,
+
+    /// <summary>Never retried and never sent with an Idempotency-Key (cancel, replace, PAN card link, wallet top-ups, webhook replay).</summary>
+    Never,
+
+    /// <summary>Retried even without an Idempotency-Key (a dry run such as order validation).</summary>
+    Safe,
+}
+
 /// <summary>Raw outcome of a successful call.</summary>
 internal sealed record ApiResponse(int Status, IReadOnlyDictionary<string, string> Headers, JsonElement Body, string? RequestId, int Attempts)
 {
@@ -69,10 +82,13 @@ internal sealed class Transport
         RequestOptions? options,
         bool autoIdempotency,
         Func<ApiResponse, T>? factory,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        RetryMode retryMode = RetryMode.Auto,
+        Func<HttpContent>? multipart = null,
+        bool noBody = false)
         where T : ApiModel
     {
-        var response = await SendAsync(method, route, pathValues, query, body, options, autoIdempotency, cancellationToken).ConfigureAwait(false);
+        var response = await SendAsync(method, route, pathValues, query, body, options, autoIdempotency, cancellationToken, retryMode, multipart, noBody).ConfigureAwait(false);
         try
         {
             T model;
@@ -104,15 +120,18 @@ internal sealed class Transport
         object? body,
         RequestOptions? options,
         bool autoIdempotency,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        RetryMode retryMode = RetryMode.Auto,
+        Func<HttpContent>? multipart = null,
+        bool noBody = false)
     {
         var url = BuildUrl(route, pathValues, query);
-        var idempotencyKey = options?.IdempotencyKey;
+        var idempotencyKey = retryMode == RetryMode.Never ? null : options?.IdempotencyKey;
         if (idempotencyKey is not null)
         {
             ValidateHeaderToken("Idempotency-Key", idempotencyKey);
         }
-        else if (autoIdempotency && method != HttpMethod.Get)
+        else if (autoIdempotency && method != HttpMethod.Get && retryMode != RetryMode.Never)
         {
             idempotencyKey = Idempotency.NewKey();
         }
@@ -126,15 +145,20 @@ internal sealed class Transport
             }
         }
 
-        var retrySafe = method == HttpMethod.Get || idempotencyKey is not null;
+        var retrySafe = retryMode switch
+        {
+            RetryMode.Never => false,
+            RetryMode.Safe => true,
+            _ => method == HttpMethod.Get || idempotencyKey is not null,
+        };
         var maxRetries = Math.Max(0, options?.MaxRetries ?? _maxRetries);
         var timeout = options?.Timeout ?? _timeout;
-        byte[]? payload = method == HttpMethod.Get ? null : JsonSerializer.SerializeToUtf8Bytes(body ?? new object(), body?.GetType() ?? typeof(object), Json.Options);
+        byte[]? payload = method == HttpMethod.Get || noBody || multipart is not null ? null : JsonSerializer.SerializeToUtf8Bytes(body ?? new object(), body?.GetType() ?? typeof(object), Json.Options);
 
         for (var attempt = 1; ; attempt++)
         {
-            using var request = BuildRequest(method, url, payload, extra, idempotencyKey);
-            Log(() => "request " + method.Method + " " + url + " attempt=" + attempt.ToString(CultureInfo.InvariantCulture) + " headers=" + HeadersForLog(request) + " body=" + Redactor.Body(payload is null ? null : Encoding.UTF8.GetString(payload)));
+            using var request = BuildRequest(method, url, payload, extra, idempotencyKey, multipart);
+            Log(() => "request " + method.Method + " " + url + " attempt=" + attempt.ToString(CultureInfo.InvariantCulture) + " headers=" + HeadersForLog(request) + " body=" + (multipart is not null ? "(multipart, content not logged)" : Redactor.Body(payload is null ? null : Encoding.UTF8.GetString(payload))));
 
             StampMitraException failure;
             RetryHint hint;
@@ -158,7 +182,9 @@ internal sealed class Transport
                 }
 
                 failure = MapError(status, text, headers, http.Headers.RetryAfter);
-                hint = new RetryHint(status is 429 or 502 or 503 or 504, (failure as RateLimitException)?.RetryAfter ?? ParseRetryAfter(http.Headers.RetryAfter));
+                hint = new RetryHint(
+                    status is 429 or 502 or 503 or 504 || (status == 409 && failure.Code == "IDEMPOTENCY_IN_PROGRESS"),
+                    (failure as RateLimitException)?.RetryAfter ?? ParseRetryAfter(http.Headers.RetryAfter));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -313,7 +339,7 @@ internal sealed class Transport
         }
     }
 
-    private HttpRequestMessage BuildRequest(HttpMethod method, Uri url, byte[]? payload, IReadOnlyDictionary<string, string>? extra, string? idempotencyKey)
+    private HttpRequestMessage BuildRequest(HttpMethod method, Uri url, byte[]? payload, IReadOnlyDictionary<string, string>? extra, string? idempotencyKey, Func<HttpContent>? multipart)
     {
         var request = new HttpRequestMessage(method, url);
         request.Headers.TryAddWithoutValidation("Authorization", "Bearer " + _apiKey);
@@ -338,7 +364,11 @@ internal sealed class Transport
             request.Headers.TryAddWithoutValidation("Idempotency-Key", idempotencyKey);
         }
 
-        if (payload is not null)
+        if (multipart is not null)
+        {
+            request.Content = multipart();
+        }
+        else if (payload is not null)
         {
             var content = new ByteArrayContent(payload);
             content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -400,7 +430,8 @@ internal sealed class Transport
 
     private static StampMitraException MapError(int status, string text, IReadOnlyDictionary<string, string> headers, RetryConditionHeaderValue? retryAfter)
     {
-        string? message = null, code = null, field = null, requestId = null;
+        string? message = null, code = null, field = null, requestId = null, wallet = null;
+        var issues = new List<ErrorDetail>();
         try
         {
             using var doc = JsonDocument.Parse(text);
@@ -410,6 +441,20 @@ internal sealed class Transport
                 code = Str(err, "code");
                 field = Str(err, "field");
                 requestId = Str(err, "requestId");
+                if (err.TryGetProperty("details", out var details) && details.ValueKind == JsonValueKind.Object)
+                {
+                    wallet = Str(details, "wallet");
+                    if (details.TryGetProperty("errors", out var list) && list.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var item in list.EnumerateArray())
+                        {
+                            if (item.ValueKind == JsonValueKind.Object)
+                            {
+                                issues.Add(new ErrorDetail(Str(item, "field"), Str(item, "code"), Str(item, "message"), item.TryGetProperty("index", out var ix) && ix.ValueKind == JsonValueKind.Number && ix.TryGetInt32(out var i32) ? i32 : null));
+                            }
+                        }
+                    }
+                }
             }
         }
         catch (JsonException)
@@ -420,18 +465,21 @@ internal sealed class Transport
         message ??= "HTTP " + status.ToString(CultureInfo.InvariantCulture);
         requestId ??= Get(headers, "x-request-id");
         var body = text.Length == 0 ? null : Truncate(text);
-        return status switch
+        var ex = status switch
         {
-            400 => new ValidationException(message, status, code, requestId, field, body),
+            400 or 422 => new ValidationException(message, status, code, requestId, field, body),
             401 => new AuthenticationException(message, status, code, requestId, body, field),
             402 => new PaymentRequiredException(message, status, code, requestId, body, field),
             403 => new PermissionDeniedException(message, status, code, requestId, body, field),
             404 => new NotFoundException(message, status, code, requestId, body, field),
-            409 => new ConflictException(message, status, code, requestId, body, field),
+            409 => new ConflictException(message, status, code, requestId, body, field, ParseRetryAfter(retryAfter)),
             429 => new RateLimitException(message, status, code, requestId, body, ParseRetryAfter(retryAfter), field),
-            >= 500 => new UpstreamException(message, status, code, requestId, body, field),
+            >= 500 => new UpstreamException(message, status, code, requestId, body, field, ParseRetryAfter(retryAfter)),
             _ => new StampMitraException(message, status, code, requestId, field, body),
         };
+        ex.Errors = issues;
+        ex.Wallet = wallet;
+        return ex;
     }
 
     private static string? Str(JsonElement e, string name) =>
