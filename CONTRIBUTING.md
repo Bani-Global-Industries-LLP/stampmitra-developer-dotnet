@@ -18,7 +18,7 @@ dotnet test --collect:"XPlat Code Coverage"         # coverlet
 
 ### Conformance suite
 
-`tests/StampMitra.Tests/ConformanceTests.cs` drives all 31 operations, the error statuses, retries, idempotency, timeouts, pagination
+`tests/StampMitra.Tests/ConformanceTests.cs` drives the original 31 operations, the error statuses, retries, idempotency, timeouts, pagination
 and the shared fixtures against the spec repo's mock server (needs Node.js):
 
 ```bash
@@ -27,6 +27,7 @@ export STAMPMITRA_SPEC_DIR=$PWD/../stampmitra-developer-openapi    # default: /h
 dotnet test --filter Category=Conformance
 ```
 
+`EstampFixtureTests.cs` replays the golden fixtures (`fixtures/operations/*.json` of the spec repo) of the 31 operations added in contract 1.2.0: request on the wire, typed response, and every documented error.
 The test fixture starts `node $STAMPMITRA_SPEC_DIR/scripts/mock-server.mjs` on a free port (`STAMPMITRA_NODE` overrides the `node` binary).
 When the spec directory or Node is missing the conformance tests are skipped; CI sets `CONFORMANCE_REQUIRED=1`, which makes that a failure.
 CI checks out `Bani-Global-Industries-LLP/stampmitra-developer-openapi` (default branch), so that repository needs its `main` branch to exist.
@@ -38,7 +39,7 @@ regenerate or add the models and methods, and the coverage test will fail until 
 ## Guidelines
 
 - Public members need XML documentation (`GenerateDocumentationFile` with warnings as errors enforces it).
-- `Models/Models.g.cs`, `Models/Requests.g.cs` and `Resources/VerifyResource.g.cs` were generated from the spec; edit them carefully and keep them consistent with it.
+- `Models/Models.g.cs`, `Models/Requests.g.cs`, `Models/EstampModels.g.cs` and `Resources/VerifyResource.g.cs` were generated from the spec; edit them carefully and keep them consistent with it.
 - The core package must stay dependency-free: `HttpClient` and `System.Text.Json` only. Integrations belong in separate packages.
 - Every `csharp` block in the README is compiled through `tests/StampMitra.Tests/ReadmeSnippets.cs`; update both together.
 - Never log or commit real keys or personal data; tests use fake handlers or the local mock server, never the real API.

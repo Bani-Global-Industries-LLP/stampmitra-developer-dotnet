@@ -10,7 +10,7 @@ Official .NET client for the [StampMitra Developer API](https://developer.stampm
 (PAN, GSTIN, vehicle RC, Voter ID, driving licence, passport, CIN, Udyam, bank account) and e-Stamp Paper.
 OpenAPI spec: <https://developer.stampmitra.in/openapi.json>.
 
-> **Status: pre-1.0 (0.1.0).** The API surface may change in minor releases. Pin your version.
+> **Status: pre-1.0 (0.2.0, API contract 1.2.0).** The API surface may change in minor releases. Pin your version.
 
 SDK guide: <https://developer.stampmitra.in/sdks/dotnet> | API docs: <https://developer.stampmitra.in/docs>
 
@@ -89,14 +89,18 @@ var order = await client.Orders.CreateAsync(
 |----------|---------|
 | `client.Verify` | `PanAsync`, `GstinAsync`, `RcAsync`, `VoterIdAsync`, `DrivingLicenseAsync`\*, `PassportAsync`\*, `CinAsync`, `UdyamAsync`, `PanToGstinAsync`, `PanToUdyamAsync`, `BankAccountAsync` |
 | `client.Services` | `ListAsync`, `GetAsync(serviceCode)` |
-| `client.Estamp` | `GetSchemaAsync`, `ListStatesAsync`, `ListInstrumentsAsync(stateCode)`, `ListArticlesAsync(instrumentCode)`, `CalculateDutyAsync`, `AddPartiesAsync(orderId, ...)` |
+| `client.Estamp` | `GetSchemaAsync`, `ListStatesAsync`, `ListInstrumentsAsync(stateCode)`, `ListArticlesAsync(instrumentCode)`, `CalculateDutyAsync`, `AddPartiesAsync(orderId, ...)`, `GetStatesAvailabilityAsync`, `GetStateAsync(stateCode)`, `GetStateRequirementsAsync(stateCode, ...)`, `ListDistrictsAsync(stateCode)`, `ListSrosAsync(stateCode, districtCode)`, `GetWalletAsync` |
+| `client.Estamp.Orders` | `ValidateAsync`, `CreateAsync`, `ListAsync`, `ListAllAsync`, `GetAsync`, `CancelAsync`, `ExportAsync`, `ListStampsAsync`, `UploadDocumentAsync` |
+| `client.Estamp.Stamps` | `GetAsync`, `CancelAsync`, `ReplaceAsync`, `SetPanCardAsync`, `GetCertificateAsync` |
+| `client.Wallets.StampDuty`, `client.Wallets.ServiceFee` | `GetBalanceAsync`, `TopUpAsync`, `ListTransactionsAsync`, `ListAllTransactionsAsync`, `ListInvoicesAsync`, `GetInvoiceAsync(id)` |
+| `client.Account` | `GetBalanceAsync`, `GetUsageAsync` |
 | `client.Orders` | `CreateAsync`, `GetAsync`, `GetStatusAsync`, `GetPaymentAsync`, `ListDocumentsAsync`, `GetDocumentDownloadAsync(id, documentId)` |
 | `client.Payments.Intents` | `CreateAsync`, `GetAsync` |
 | `client.Usage` | `SummaryAsync` |
 | `client.Logs` | `ListAsync`, `ListAllAsync` (`IAsyncEnumerable<LogEntry>`) |
 | `client.Webhooks.Events` | `ListAsync`, `ReplayAsync` |
 
-Add `using StampMitra.Models;` (models and request types) and `using StampMitra.Resources;` (`LogsListParams`).
+Add `using StampMitra.Models;` (models and request types) and `using StampMitra.Resources;` (`LogsListParams`, `EstampDocumentFile`, `EstampRequirementsParams`, `EstampOrdersListParams`, `WalletListParams`).
 
 \* Needs an IP-allowlisted key; otherwise a `PermissionDeniedException` carries the server message verbatim.
 
@@ -125,20 +129,116 @@ Responses are immutable `record`s (`pan.RegisteredName`). Fields the SDK does no
 Responses whose shape the API does not fix (e-Stamp reference data, duty, parties, webhook events) are `GenericResponse`
 (`Data`, `Get(name)`, `Items`, `NextCursor`, `RawJson`). `GET /v1/services` returns a bare array, exposed as `ServiceList`.
 
+## e-Stamp orders
+
+`client.Estamp.Orders` takes typed stamp lines. One order covers **one state** (up to 5000 lines, `Quantity` up to 1000 per line). A party is
+a bare name (a `string` converts implicitly to `EstampParty`) or an `EstampParty` object with `Address`, `Phone`, `FatherHusbandName` and
+`Gender`; `GetStateRequirementsAsync` tells you which of these a state needs and returns a valid `ExampleBody`. The payer's PAN card is
+**advisory**: an order is never held back for want of it, and you can send it as `PanCardImage` (an https link), upload it to the order, or
+link it later with `Stamps.SetPanCardAsync` (processed asynchronously: it answers 202 and the result appears in `stamp.PanCard`).
+
+```csharp
+var body = new EstampOrderRequest
+{
+    Reference = "order-2026-0917",
+    Stamps = new[]
+    {
+        new EstampStampLine
+        {
+            ClientReference = "line-001",
+            State = "MH",
+            Category = EstampCategory.EStamp,
+            ArticleCode = "ART1",
+            Denomination = 500,
+            FirstParty = new EstampParty { Name = "Jane Doe", Address = "12 MG Road, Pune" },
+            SecondParty = "John Smith",
+            Purpose = "Rental Agreement",
+        },
+    },
+};
+
+// 1. Dry run: nothing is saved or charged.
+EstampValidateResult check = await client.Estamp.Orders.ValidateAsync(body, ct);
+if (check.Valid != true)
+{
+    foreach (var issue in check.Errors ?? new List<EstampValidationIssue>())
+    {
+        Console.WriteLine($"stamps[{issue.Index}] {issue.Field}: {issue.Message}");
+    }
+
+    return;
+}
+
+// 2. Create. The Idempotency-Key is required by the API: the SDK generates one when you omit it and reuses it on retries.
+EstampOrder order = await client.Estamp.Orders.CreateAsync(body, new RequestOptions { IdempotencyKey = "order-2026-0917" }, ct);
+
+// 3. Upload the payer's PAN card (PDF, JPEG or PNG, at most 10 MB). Optional.
+await client.Estamp.Orders.UploadDocumentAsync(order.Id!, await EstampDocumentFile.FromPathAsync("pan.pdf", null, ct), ct);
+
+// 4. List the stamps and 5. fetch the certificate of each one once it has been delivered.
+EstampStampList stamps = await client.Estamp.Orders.ListStampsAsync(order.Id!, ct);
+foreach (var stamp in stamps.Items ?? new List<EstampStamp>())
+{
+    EstampCertificate cert = await client.Estamp.Stamps.GetCertificateAsync(stamp.Id!, ct);
+    Console.WriteLine(cert.Available == true ? cert.DownloadUrl : $"{stamp.Id}: {cert.Status}");
+}
+```
+
+Order creation debits the duty from your Stamp Duty Wallet and the service fee from your Service Fee Wallet; the returned `Status` is a
+pre-placement review status. `CancelAsync` (order) and `Stamps.CancelAsync`, `ReplaceAsync` and `SetPanCardAsync` are **never retried
+automatically**. A rejected order body raises a `ValidationException` whose `Errors` lists every finding (`Field`, `Code`, `Message`, `Index`);
+a 402 raises a `PaymentRequiredException` whose `Wallet` is `WalletNames.StampDuty` or `WalletNames.ServiceFee`:
+
+```csharp
+try
+{
+    await client.Estamp.Orders.CreateAsync(body, ct);
+}
+catch (ValidationException ex) when (ex.Errors.Count > 0)
+{
+    foreach (var e in ex.Errors)
+    {
+        Console.Error.WriteLine($"stamps[{e.Index}] {e.Field} {e.Code}: {e.Message}");
+    }
+}
+catch (PaymentRequiredException ex)
+{
+    Console.Error.WriteLine($"top up the {ex.Wallet} wallet first");
+}
+```
+
+### Wallets
+
+There are two prepaid wallets: the **Stamp Duty Wallet** (statutory duty) and the **Service Fee Wallet** (procurement and API charges of an
+order, net of GST). Balances are decimal strings; parse them, never concatenate. A Stamp Duty top-up adds a **6% processing fee plus 18% GST on
+that fee** to what the payer pays; the wallet is credited the amount you add (`CreditAmount`), and a GST tax invoice for the fee is available from
+`Wallets.StampDuty.ListInvoicesAsync` / `GetInvoiceAsync` (the invoice id is the top-up's `TopupId`). A Service Fee top-up adds GST on top of the amount.
+The SDK never computes fees: read `ProcessingFeeAmount`, `GstAmount`, `TotalCharged` and `CreditAmount` from the response. Top-ups are never retried automatically.
+
+```csharp
+StampDutyWalletTopup topup = await client.Wallets.StampDuty.TopUpAsync(new WalletTopupRequest { BaseAmount = 1000 }, ct);
+Console.WriteLine($"pay {topup.TotalCharged} (fee {topup.ProcessingFeeAmount} + GST {topup.GstAmount}); wallet credited {topup.CreditAmount}");
+
+WalletBalance balance = await client.Wallets.ServiceFee.GetBalanceAsync(ct);
+StampDutyWalletInvoicesPage invoices = await client.Wallets.StampDuty.ListInvoicesAsync(null, ct);
+```
+
+The top-up response carries the payment order to complete in checkout (live keys); a sandbox top-up credits fake money at once.
+
 ## Errors
 
-All errors derive from `StampMitraException` (`Status`, `Code`, `Message`, `RequestId`, `Field`, `Body`):
+All errors derive from `StampMitraException` (`Status`, `Code`, `Message`, `RequestId`, `Field`, `Body`, plus `Errors` (`error.details.errors[]`) and `Wallet` (`error.details.wallet`)):
 
 | HTTP | Exception |
 |------|-----------|
-| 400 (and local validation) | `ValidationException` |
+| 400, 422 (and local validation) | `ValidationException` |
 | 401 | `AuthenticationException` |
-| 402 | `PaymentRequiredException` |
+| 402 | `PaymentRequiredException` (`Wallet` names the wallet that is short) |
 | 403 | `PermissionDeniedException` |
 | 404 | `NotFoundException` |
-| 409 | `ConflictException` |
+| 409 | `ConflictException` (`RetryAfter`) |
 | 429 | `RateLimitException` (`RetryAfter` when the header is present) |
-| 5xx | `UpstreamException` |
+| 5xx | `UpstreamException` (`RetryAfter`) |
 | network failure / timeout | `ApiConnectionException` / `ApiTimeoutException` |
 | bad webhook | `SignatureVerificationException` |
 
@@ -162,13 +262,14 @@ catch (StampMitraException ex)
 
 ## Retries and idempotency
 
-`MaxRetries` defaults to 2, with exponential backoff and full jitter (0.5 s base, 8 s cap). `Retry-After` is honoured when sent
-(capped at 60 s); the API itself currently sends none. Retried: 429, 502, 503, 504, connection errors and timeouts. GET is always
-retry-safe. A POST is retried only when it carries an `Idempotency-Key`: the SDK generates a random UUIDv4 (from the operating
-system CSPRNG) for **every POST except webhook replay** (verification, duty, parties, orders, payment intents), and reuses the **same key
-across retries**, so a retried metered call replays the original result instead of billing twice. Pass your own with
-`RequestOptions.IdempotencyKey`. Webhook replay is never retried unless you supply a key. Other statuses (400, 401, 402, 403, 404, 409, 500)
-are never retried.
+`MaxRetries` defaults to 2, with exponential backoff and full jitter (0.5 s base, 8 s cap). `Retry-After` (seconds) is honoured on 429, 503 and
+409 `IDEMPOTENCY_IN_PROGRESS` (capped at 60 s); without the header the computed backoff applies. Retried: 429, 502, 503, 504, connection errors,
+timeouts and a 409 `IDEMPOTENCY_IN_PROGRESS`. GET is always retry-safe. A POST is retried only when it carries an `Idempotency-Key`: the SDK
+generates a random UUIDv4 (from the operating system CSPRNG) for the POSTs that accept one (verification, duty, parties, orders, e-Stamp order
+creation and document upload, payment intents) and reuses the **same key across retries**, so a retried metered call replays the original result
+instead of billing twice. Pass your own with `RequestOptions.IdempotencyKey`. `Estamp.Orders.ValidateAsync` is a dry run and is retried without a key.
+**Never retried automatically** (and never sent with a key, even a caller-supplied one): order cancel, stamp cancel, stamp replace, PAN card link,
+both wallet top-ups and webhook replay. Other statuses (400, 401, 402, 403, 404, 409 with any other code, 422, 500) are never retried.
 
 ## Timeouts, cancellation and redirects
 
@@ -276,7 +377,7 @@ Per-call rates by plan, in rupees, excluding 18% GST:
 | IP allowlisting | No | No | Yes | Yes | Yes | Yes |
 | White-label and custom domain | No | No | No | Yes | No | Yes |
 
-Growth and Scale are also available yearly (₹9,990 and ₹49,990, two months free). There are separate Startup and NGO programmes. Plans, rates and limits can change, and [developer.stampmitra.in/pricing](https://developer.stampmitra.in/pricing) is the source of truth; see it for how an e-Stamp order is priced in total.
+Growth and Scale are also available yearly (₹9,990 and ₹49,990, two months free). There are separate Startup and NGO programmes. Plans, rates and limits can change, and [developer.stampmitra.in/pricing](https://developer.stampmitra.in/pricing) is the source of truth; see it for how an e-Stamp order is priced in total. API e-Stamp orders are charged per paper as a procurement charge plus an API charge (ex-GST); see the pricing page for current rates.
 
 ## Security
 
@@ -300,8 +401,9 @@ Only the latest minor release receives fixes while the SDK is pre-1.0. See [CHAN
 
 ## Examples
 
-[`examples/ConsoleApp`](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/examples/ConsoleApp/Program.cs) (verify a PAN, create an order, read its status, page through logs) and
-[`examples/WebhookReceiver`](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/examples/WebhookReceiver/Program.cs) (ASP.NET Core minimal API). Both are compiled by `dotnet build` and CI.
+[`examples/ConsoleApp`](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/examples/ConsoleApp/Program.cs) (verify a PAN, create an order, read its status, page through logs),
+[`examples/EstampOrder`](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/examples/EstampOrder/Program.cs) (validate, create, upload the PAN card, list stamps, certificate, wallets) and
+[`examples/WebhookReceiver`](https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/blob/main/examples/WebhookReceiver/Program.cs) (ASP.NET Core minimal API). All are compiled by `dotnet build` and CI.
 Point them at a mock server with `STAMPMITRA_BASE_URL=http://127.0.0.1:4010`.
 
 ## Development

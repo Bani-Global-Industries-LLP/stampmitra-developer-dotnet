@@ -33,7 +33,7 @@ public enum StampMitraEnvironment
 public sealed class StampMitraClient : IDisposable
 {
     /// <summary>The SDK version.</summary>
-    public const string Version = "0.1.0";
+    public const string Version = "0.2.0";
 
     private static readonly Regex KeyRx = new(@"^sk_(test|live)_[A-Za-z0-9_-]{8,}\z", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
