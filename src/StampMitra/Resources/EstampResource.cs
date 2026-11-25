@@ -186,7 +186,7 @@ public sealed class EstampResource
     /// <inheritdoc cref="ListSrosAsync(string, string, RequestOptions, CancellationToken)"/>
     public Task<EstampSroList> ListSrosAsync(string stateCode, string districtCode, CancellationToken cancellationToken) => ListSrosAsync(stateCode, districtCode, null, cancellationToken);
 
-    /// <summary>Reads both e-Stamp wallets (Stamp Duty and, nested, Service Fee) in one call (GET /v1/estamp/wallet). Requires the <c>stamp-duty-wallet.read and service-fee-wallet.read</c> scope.</summary>
+    /// <summary>Reads both wallets (Stamp duty and, nested under <c>ServiceFee</c>, the Service wallet) in one call (GET /v1/estamp/wallet). Requires the <c>stamp-duty-wallet.read and service-fee-wallet.read</c> scope.</summary>
     /// <param name="options">Per-call overrides (timeout, retries, idempotency key, headers).</param>
     /// <param name="cancellationToken">Cancels the call, including any pending retry delay.</param>
     /// <returns>The response; HTTP metadata is on <see cref="ApiModel.Response"/>.</returns>

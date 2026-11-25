@@ -61,8 +61,8 @@ jobs:
       - name: Package contents
         run: |
           for f in artifacts/*.nupkg; do unzip -l "$f"; done
-          test -f artifacts/StampMitra.0.2.0.snupkg
-          test -f artifacts/StampMitra.Extensions.DependencyInjection.0.2.0.snupkg
+          test -f artifacts/StampMitra.0.2.1.snupkg
+          test -f artifacts/StampMitra.Extensions.DependencyInjection.0.2.1.snupkg
 
   audit:
     runs-on: ubuntu-latest

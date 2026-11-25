@@ -218,7 +218,7 @@ public sealed record EstampStampLine
     [JsonPropertyName("propertyArea")]
     public EstampPropertyArea? PropertyArea { get; init; }
 
-    /// <summary>https link to the payer's PAN card (advisory, never blocking).</summary>
+    /// <summary>https link to the payer's PAN card. Optional when placing the order, but a PAN card is mandatory to complete the stamp.</summary>
     [JsonPropertyName("panCardImage")]
     public string? PanCardImage { get; init; }
 

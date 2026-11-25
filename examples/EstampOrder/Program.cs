@@ -67,7 +67,7 @@ try
     var order = await client.Estamp.Orders.CreateAsync(body, new RequestOptions { IdempotencyKey = "order-2026-0917" }, ct);
     Console.WriteLine($"order {order.Id} status={order.Status} stamps={order.StampCount}");
 
-    // 3. The payer's PAN card is advisory, never blocking. Upload it when you have it.
+    // 3. An order can be placed without the payer's PAN card, but a PAN card is mandatory to complete the stamp. Upload it when you have it.
     if (args.Length > 0)
     {
         var file = await EstampDocumentFile.FromPathAsync(args[0], null, ct);
@@ -85,7 +85,7 @@ try
 
     // Wallets: both balances in one read. Balances are decimal strings.
     var wallet = await client.Estamp.GetWalletAsync(ct);
-    Console.WriteLine($"Stamp Duty Wallet {wallet.Balance} {wallet.Currency}; Service Fee Wallet {wallet.ServiceFee?.Balance}");
+    Console.WriteLine($"Stamp duty wallet {wallet.Balance} {wallet.Currency}; Service wallet {wallet.ServiceFee?.Balance}");
 }
 catch (PaymentRequiredException ex)
 {

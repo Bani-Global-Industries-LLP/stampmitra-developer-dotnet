@@ -10,7 +10,7 @@ Official .NET client for the [StampMitra Developer API](https://developer.stampm
 (PAN, GSTIN, vehicle RC, Voter ID, driving licence, passport, CIN, Udyam, bank account) and e-Stamp Paper.
 OpenAPI spec: <https://developer.stampmitra.in/openapi.json>.
 
-> **Status: pre-1.0 (0.2.0, API contract 1.2.0).** The API surface may change in minor releases. Pin your version.
+> **Status: pre-1.0 (0.2.1, API contract 1.2.1).** The API surface may change in minor releases. Pin your version.
 
 SDK guide: <https://developer.stampmitra.in/sdks/dotnet> | API docs: <https://developer.stampmitra.in/docs>
 
@@ -133,8 +133,8 @@ Responses whose shape the API does not fix (e-Stamp reference data, duty, partie
 
 `client.Estamp.Orders` takes typed stamp lines. One order covers **one state** (up to 5000 lines, `Quantity` up to 1000 per line). A party is
 a bare name (a `string` converts implicitly to `EstampParty`) or an `EstampParty` object with `Address`, `Phone`, `FatherHusbandName` and
-`Gender`; `GetStateRequirementsAsync` tells you which of these a state needs and returns a valid `ExampleBody`. The payer's PAN card is
-**advisory**: an order is never held back for want of it, and you can send it as `PanCardImage` (an https link), upload it to the order, or
+`Gender`; `GetStateRequirementsAsync` tells you which of these a state needs and returns a valid `ExampleBody`. An order can be placed
+without the payer's PAN card, but **a PAN card is mandatory to complete the stamp** (until one is on file the stamp waits). Send it as `PanCardImage` (an https link), upload it to the order, or
 link it later with `Stamps.SetPanCardAsync` (processed asynchronously: it answers 202 and the result appears in `stamp.PanCard`).
 
 ```csharp
@@ -184,7 +184,7 @@ foreach (var stamp in stamps.Items ?? new List<EstampStamp>())
 }
 ```
 
-Order creation debits the duty from your Stamp Duty Wallet and the service fee from your Service Fee Wallet; the returned `Status` is a
+Order creation debits the duty from your Stamp duty wallet and the service charges from your Service wallet (₹99 procurement + ₹5 API charge per paper plus a convenience fee, default 5% of a paper's duty above ₹1,000; the duty is multiplied by `Quantity`; sandbox quotes use the same default rates as live, client-agreed rates are not applied in sandbox); the returned `Status` is a
 pre-placement review status. `CancelAsync` (order) and `Stamps.CancelAsync`, `ReplaceAsync` and `SetPanCardAsync` are **never retried
 automatically**. A rejected order body raises a `ValidationException` whose `Errors` lists every finding (`Field`, `Code`, `Message`, `Index`);
 a 402 raises a `PaymentRequiredException` whose `Wallet` is `WalletNames.StampDuty` or `WalletNames.ServiceFee`:
@@ -209,10 +209,10 @@ catch (PaymentRequiredException ex)
 
 ### Wallets
 
-There are two prepaid wallets: the **Stamp Duty Wallet** (statutory duty) and the **Service Fee Wallet** (procurement and API charges of an
-order, net of GST). Balances are decimal strings; parse them, never concatenate. A Stamp Duty top-up adds a **6% processing fee plus 18% GST on
+There are two prepaid wallets: the **Stamp duty wallet** (statutory duty) and the **Service wallet** (one balance that pays for verification calls and for the procurement and API charges of an
+e-Stamp order, net of GST; a top-up is a minimum of ₹1,000 plus 18% GST, and orders debit fees before GST because GST on fees is paid at top-up). The service-fee names (`Wallets.ServiceFee`, the `ServiceFee` member of `EstampWallet`, `WalletNames.ServiceFee` = `SERVICE_FEE`) are kept for compatibility. Balances are decimal strings; parse them, never concatenate. A Stamp duty top-up adds a **6% processing fee plus 18% GST on
 that fee** to what the payer pays; the wallet is credited the amount you add (`CreditAmount`), and a GST tax invoice for the fee is available from
-`Wallets.StampDuty.ListInvoicesAsync` / `GetInvoiceAsync` (the invoice id is the top-up's `TopupId`). A Service Fee top-up adds GST on top of the amount.
+`Wallets.StampDuty.ListInvoicesAsync` / `GetInvoiceAsync` (the invoice id is the top-up's `TopupId`). A Service wallet top-up adds 18% GST on top of the amount.
 The SDK never computes fees: read `ProcessingFeeAmount`, `GstAmount`, `TotalCharged` and `CreditAmount` from the response. Top-ups are never retried automatically.
 
 ```csharp
@@ -357,27 +357,31 @@ lines to `ILogger` (category `StampMitra`, Debug level). The core package has no
 
 ## Pricing
 
-The SDK is free and MIT-licensed. You pay only for successful API calls, from one prepaid wallet. Sandbox is free: mock data on every endpoint, and it never debits your wallet.
+The SDK is free and MIT-licensed. You pay only for successful API calls, from one prepaid **Service wallet**: the same balance pays for verification calls and for the service charges of an e-Stamp order. A Service wallet top-up is a minimum of ₹1,000 plus 18% GST; GST on fees is paid at top-up, so an order debits the fees before GST. New accounts get no signup credit. Sandbox is free: mock data on every endpoint, and it never debits your wallet.
 
-Per-call rates by plan, in rupees, excluding 18% GST:
+Per-call rates in rupees, excluding GST (the same on both self-serve plans):
 
-| Product | Pay-as-you-go | Growth | Scale | Startup | Enterprise |
-|---|---|---|---|---|---|
-| Standard verification (PAN, GSTIN, Voter ID, Driving Licence, CIN, Udyam, cross-lookups) | ₹5 | ₹4 | ₹3.50 | ₹4 | Custom |
-| Passport and Vehicle RC | ₹9 | ₹8.50 | ₹8 | ₹8.50 | Custom |
-| Bank account (penny-drop) | ₹4 | ₹4 | ₹4 | ₹4 | Custom |
-| e-Stamp API fee (StampMitra's charge only) | ₹5 | ₹4 | ₹3 | ₹4 | Custom |
+| Product | Rate per successful call |
+|---|---|
+| PAN | ₹4 |
+| GSTIN | ₹3 |
+| Voter ID, Driving Licence, CIN, PAN to GSTIN | ₹5 |
+| Udyam | ₹8.50 |
+| PAN to Udyam | ₹20 |
+| Passport and Vehicle RC | ₹9 |
+| Bank account (penny-drop) | ₹4 |
+| e-Stamp API charge (per paper, see below) | ₹5 |
 
-| | Sandbox | Pay-as-you-go | Growth | Scale | Startup | Enterprise |
-|---|---|---|---|---|---|---|
-| Plan fee | Free | ₹0 / month | ₹999 / month | ₹4,999 / month | Free for 6 months, then 50% off for 6 | Custom |
-| Seats / API keys / webhooks | 1 / 2 / 1 | 3 / 5 / 3 | 10 / 20 / 10 | 25 / 50 / 25 | 10 / 20 / 10 | Custom |
-| Requests per minute | 20 | 60 | 300 | 1,000 | 300 | Custom |
-| Log retention | 7 days | 30 days | 90 days | 365 days | 90 days | Custom |
-| IP allowlisting | No | No | Yes | Yes | Yes | Yes |
-| White-label and custom domain | No | No | No | Yes | No | Yes |
+| | Pay as you go | Business |
+|---|---|---|
+| Plan fee | ₹0 / month | ₹999 / month (₹9,990 / year) |
+| Seats / API keys / webhooks | 3 / 5 / 3 | 10 / 20 / 10 |
+| Requests per minute | 60 | 300 |
+| Daily limit per API | 100 | 500 |
+| Log retention | 30 days | 90 days |
+| IP allowlisting | No | Yes |
 
-Growth and Scale are also available yearly (₹9,990 and ₹49,990, two months free). There are separate Startup and NGO programmes. Plans, rates and limits can change, and [developer.stampmitra.in/pricing](https://developer.stampmitra.in/pricing) is the source of truth; see it for how an e-Stamp order is priced in total. API e-Stamp orders are charged per paper as a procurement charge plus an API charge (ex-GST); see the pricing page for current rates.
+An e-Stamp order is priced per paper: ₹99 procurement + ₹5 API charge + a convenience fee (default 5% of a paper's duty above ₹1,000), and the duty is multiplied by quantity. The duty is paid from the **Stamp duty wallet**; the service charges are paid from the Service wallet. Sandbox quotes use the same default rates as live; client-agreed rates are not applied in sandbox. There are separate Startup and NGO programmes. Plans, rates and limits can change, and [developer.stampmitra.in/pricing](https://developer.stampmitra.in/pricing) is the source of truth.
 
 ## Security
 
