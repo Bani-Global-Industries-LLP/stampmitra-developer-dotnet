@@ -78,10 +78,10 @@ public sealed record ErrorDetail(string? Field, string? Code, string? Message, i
 /// <summary>Values of <see cref="StampMitraException.Wallet"/>.</summary>
 public static class WalletNames
 {
-    /// <summary>The Stamp Duty Wallet.</summary>
+    /// <summary>The Stamp duty wallet.</summary>
     public const string StampDuty = "STAMP_DUTY";
 
-    /// <summary>The Service Fee Wallet.</summary>
+    /// <summary>The Service wallet (the value keeps its SERVICE_FEE name for compatibility).</summary>
     public const string ServiceFee = "SERVICE_FEE";
 }
 

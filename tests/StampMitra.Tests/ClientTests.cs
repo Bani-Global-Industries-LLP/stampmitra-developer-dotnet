@@ -127,7 +127,7 @@ public sealed class ClientTests
         Assert.Equal("Bearer " + Tc.Key, req.Headers["Authorization"]);
         Assert.Equal("application/json", req.Headers["Accept"]);
         Assert.StartsWith("application/json", req.Headers["Content-Type"], StringComparison.Ordinal);
-        Assert.StartsWith("stampmitra-dotnet/0.2.0 (", req.Headers["User-Agent"], StringComparison.Ordinal);
+        Assert.StartsWith("stampmitra-dotnet/0.2.1 (", req.Headers["User-Agent"], StringComparison.Ordinal);
         Assert.Matches(new Regex("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"), req.Headers["Idempotency-Key"]);
         using var body = JsonDocument.Parse(req.Body!);
         Assert.Equal("ABCDE1234F", body.RootElement.GetProperty("pan").GetString());

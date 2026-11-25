@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/) (pre-1.0: minor versions may break
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-25
+
+Wording and snapshot refresh; targets API contract 1.2.1. No member, class or constant is renamed.
+
+### Changed
+- XML documentation and README describe one customer-facing **Service wallet** (the same balance pays for verification calls and for the service charges of an e-Stamp order; a top-up is a minimum of Rs 1,000 plus 18% GST, and orders debit fees before GST because GST on fees is paid at top-up) next to the **Stamp duty wallet**. `Wallets.ServiceFee`, `EstampWallet.ServiceFee` and `WalletNames.ServiceFee` (`SERVICE_FEE`) keep their names for compatibility.
+- PAN card: an order can be placed without `PanCardImage`, but a PAN card is mandatory to complete the stamp. Validation is unchanged and the `PAN_CARD_RECOMMENDED` advisory keeps its name.
+- Pricing wording: per paper, Rs 99 procurement + Rs 5 API charge + a convenience fee (default 5% of a paper's duty above Rs 1,000), duty multiplied by quantity; sandbox quotes use the same default rates as live (client-agreed rates are not applied in sandbox). The README rate tables match the published price book (PAN Rs 4, GSTIN Rs 3, two self-serve plans). New accounts get no signup credit.
+- `spec/openapi.json` refreshed to the spec repo's 1.2.1 (documentation text only).
+
 ## [0.2.0] - 2026-11-24
 
 Targets API contract 1.2.0 (62 operations, up from 31).
@@ -41,6 +51,7 @@ Targets API contract 1.2.0 (62 operations, up from 31).
 - Bundled OpenAPI snapshot, a spec-coverage check, a conformance suite that runs against the spec repo's mock server, SourceLink and symbol packages.
 - `BaseUrl` must be https (loopback http allowed), redirects are never followed, the API key and webhook secret never appear in `ToString()`, exceptions or logs.
 
-[Unreleased]: https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Bani-Global-Industries-LLP/stampmitra-developer-dotnet/releases/tag/v0.1.0

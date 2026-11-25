@@ -33,7 +33,7 @@ public enum StampMitraEnvironment
 public sealed class StampMitraClient : IDisposable
 {
     /// <summary>The SDK version.</summary>
-    public const string Version = "0.2.0";
+    public const string Version = "0.2.1";
 
     private static readonly Regex KeyRx = new(@"^sk_(test|live)_[A-Za-z0-9_-]{8,}\z", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
@@ -160,7 +160,7 @@ public sealed class StampMitraClient : IDisposable
     /// <summary>Webhook event history and replay.</summary>
     public WebhooksResource Webhooks { get; }
 
-    /// <summary>The Stamp Duty and Service Fee wallets.</summary>
+    /// <summary>The Stamp duty wallet and the Service wallet (the <c>ServiceFee</c> member keeps its name for compatibility).</summary>
     public WalletsResource Wallets { get; }
 
     /// <summary>Wallet balance and usage of your organization.</summary>

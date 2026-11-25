@@ -44,7 +44,7 @@ public sealed class EstampOrdersResource
     /// <inheritdoc cref="ValidateAsync(EstampOrderRequest, RequestOptions, CancellationToken)"/>
     public Task<EstampValidateResult> ValidateAsync(EstampOrderRequest request, CancellationToken cancellationToken) => ValidateAsync(request, null, cancellationToken);
 
-    /// <summary>Creates an order (pending internal review); the Stamp Duty and Service Fee wallets are debited (POST /v1/estamp/orders). An Idempotency-Key is generated unless you pass one and reused across automatic retries. Requires the <c>estamp.orders.create</c> scope.</summary>
+    /// <summary>Creates an order (pending internal review); the duty is debited from the Stamp duty wallet and the service charges (Rs 99 procurement + Rs 5 API charge per paper plus a convenience fee, default 5% of a paper's duty above Rs 1,000; sandbox quotes use the same default rates as live) from the Service wallet (POST /v1/estamp/orders). An Idempotency-Key is generated unless you pass one and reused across automatic retries. Requires the <c>estamp.orders.create</c> scope.</summary>
     /// <param name="request">The order.</param>
     /// <param name="options">Per-call overrides (timeout, retries, idempotency key, headers).</param>
     /// <param name="cancellationToken">Cancels the call, including any pending retry delay.</param>
@@ -128,7 +128,7 @@ public sealed class EstampOrdersResource
     /// <inheritdoc cref="ListStampsAsync(string, RequestOptions, CancellationToken)"/>
     public Task<EstampStampList> ListStampsAsync(string id, CancellationToken cancellationToken) => ListStampsAsync(id, null, cancellationToken);
 
-    /// <summary>Uploads the payer's PAN card (PDF, JPEG or PNG, at most 10 MB) as multipart/form-data; advisory, never blocking (POST /v1/estamp/orders/{orderId}/documents). An Idempotency-Key is generated unless you pass one and reused across automatic retries. Requires the <c>estamp.documents.write</c> scope.</summary>
+    /// <summary>Uploads the payer's PAN card (PDF, JPEG or PNG, at most 10 MB) as multipart/form-data. An order can be placed without a PAN card, but a PAN card is mandatory to complete the stamp (POST /v1/estamp/orders/{orderId}/documents). An Idempotency-Key is generated unless you pass one and reused across automatic retries. Requires the <c>estamp.documents.write</c> scope.</summary>
     /// <param name="orderId">The order id.</param>
     /// <param name="file">The file.</param>
     /// <param name="options">Per-call overrides (timeout, retries, idempotency key, headers).</param>

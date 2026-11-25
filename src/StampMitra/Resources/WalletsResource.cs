@@ -21,10 +21,10 @@ public sealed class WalletsResource
         ServiceFee = new ServiceFeeWalletResource(transport, validate);
     }
 
-    /// <summary>The Stamp Duty Wallet.</summary>
+    /// <summary>The Stamp duty wallet (pays the stamp duty).</summary>
     public StampDutyWalletResource StampDuty { get; }
 
-    /// <summary>The Service Fee Wallet.</summary>
+    /// <summary>The Service wallet: one balance that pays for verification calls and for the service charges of an e-Stamp order. The property keeps its service-fee name for compatibility.</summary>
     public ServiceFeeWalletResource ServiceFee { get; }
 
     internal static List<KeyValuePair<string, string?>> PageQuery(WalletListParams? p) => new()
@@ -151,7 +151,7 @@ public sealed class StampDutyWalletResource
     }
 }
 
-/// <summary>The Service Fee Wallet (procurement and API charges of an order, net of GST). A top-up adds GST on top of the amount you add.</summary>
+/// <summary>The Service wallet (class name kept for compatibility): one balance for verification calls and the procurement and API charges of an e-Stamp order, net of GST. A top-up is a minimum of Rs 1,000 plus 18% GST on the amount you add; GST on fees is paid at top-up, so orders debit fees before GST.</summary>
 public sealed class ServiceFeeWalletResource
 {
     private readonly Transport _transport;

@@ -7,7 +7,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <PackageId>StampMitra.Extensions.DependencyInjection</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Description>Microsoft.Extensions.DependencyInjection / IHttpClientFactory integration for the StampMitra .NET SDK: services.AddStampMitra(...).</Description>
     <PackageTags>stampmitra;dependency-injection;httpclientfactory;kyc;estamp;india</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
